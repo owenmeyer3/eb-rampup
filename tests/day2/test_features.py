@@ -1,8 +1,5 @@
 from cmath import sqrt
-
-import numpy as np
 import pandas as pd
-import pytest
 
 from eb_rampup.data import generate_groups
 from eb_rampup.features import (

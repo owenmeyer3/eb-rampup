@@ -1,0 +1,23 @@
+[
+  "log_group_size",
+  "avg_age",
+  "pct_female",
+  "log_avg_salary",
+  "elimination_days",
+  "benefit_pct",
+  "experience_lr",
+  "industry_construction",
+  "industry_education",
+  "industry_finance",
+  "industry_healthcare",
+  "industry_manufacturing",
+  "industry_professional_services",
+  "industry_retail",
+  "industry_technology",
+  "industry_transportation",
+  "region_midwest",
+  "region_northeast",
+  "region_southeast",
+  "region_southwest",
+  "region_west"
+]

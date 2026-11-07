@@ -576,10 +576,10 @@ MODEL_NAME = "loss-ratio-ltd"
 
 
 def git_sha() -> str:
-    try:
-        return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True).strip()
-    except Exception:
-        return "unknown"
+    return subprocess.check_output(
+        ["git", "rev-parse", "--short", "HEAD"],
+        text=True,
+    ).strip()
 
 
 def build_package() -> Path:
@@ -609,6 +609,7 @@ def main() -> None:
     p.add_argument("--alias", help="alias for a new version, e.g. challenger")
     args = p.parse_args()
 
+    commit_sha = git_sha()
     run_id = time.strftime("%Y%m%d-%H%M%S")
     base_dir = f"gs://{args.bucket}/training/{run_id}"
     aiplatform.init(project=args.project, location=args.region,
@@ -656,7 +657,7 @@ def main() -> None:
             f"MAE {metrics['mae']:.4f} | book baseline {metrics['baseline_book_mae']:.4f}"
             f" | history baseline {metrics['baseline_history_mae']:.4f}"
         ),
-        labels={"git_sha": git_sha(), "run_id": run_id},
+        labels={"git_sha": commit_sha, "run_id": run_id},
     )
     print(json.dumps(metrics, indent=2))
     print(f"Registered {model.resource_name}, version {model.version_id}, aliases {aliases}")

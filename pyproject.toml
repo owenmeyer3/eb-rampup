@@ -21,6 +21,9 @@ dev = ["pytest", "ruff", "build", "google-cloud-aiplatform", "scikit-learn"]
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.ruff.lint]
+ignore = ["I001"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = ["integration: talks to real GCP resources (slow, costs money)"]

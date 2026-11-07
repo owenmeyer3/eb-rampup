@@ -4,10 +4,9 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-import xgboost as xgb
 
 from eb_rampup.data import generate_groups
-from eb_rampup.features import FEATURE_COLUMNS, TARGET, build_features, sample_weights
+from eb_rampup.features import TARGET, build_features, sample_weights
 from eb_rampup.train import (
     MODEL_FILENAME,
     evaluate,

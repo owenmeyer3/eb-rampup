@@ -98,6 +98,12 @@ ruff check .
 pytest
 ```
 
+`ruff` is a fast Python code checker. `ruff check .` scans Python files under the current directory and reports issues such as unused imports, undefined names, and common mistakes. It is a static check: it does not execute your code or prove the program behaves correctly. `pytest` runs the tests for behavior; Ruff and pytest catch different kinds of problems.
+
+The command `ruff check .` only reports issues; it does not change files. Ruff can also fix some issues with `ruff check --fix .`, but review the diff after using that. Formatting is a separate command (`ruff format .`) and is not part of this workflow.
+
+For example, `BLE001` flags `except Exception` because it catches unrelated failures too. In the Day 2 `git_sha` helper, the commit hash is required to trace a registered model back to its source. Let `subprocess.check_output` raise if Git is unavailable or the current directory has no commit, and call `git_sha()` before submitting the cloud job. That preserves the error and traceback and fails before spending time or money on a run that could not be labeled accurately.
+
 Fix lint or test failures rather than disabling checks just to get a green badge. The current pytest configuration excludes tests marked `integration` by default, so CI won't contact BigQuery or spend money. Keep the CI suite deterministic and independent of GCP credentials.
 
 ### 3b. Create the workflow

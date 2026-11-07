@@ -61,8 +61,8 @@ def evaluate(model, train_df: pd.DataFrame, test_df: pd.DataFrame) -> dict:
         "mae": weighted_mae(y, pred, w),
         "baseline_book_mae": weighted_mae(y, np.full(len(y), book_lr), w),
         "baseline_history_mae": weighted_mae(y, own_history, w),
-        "n_train": int(len(train_df)),
-        "n_test": int(len(test_df)),
+        "n_train": len(train_df),
+        "n_test": len(test_df),
     }
 
 

@@ -1,0 +1,6 @@
+{
+  "n_estimators": 5,
+  "max_depth": 2,
+  "learning_rate": 0.3,
+  "random_state": 0
+}
