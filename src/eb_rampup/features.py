@@ -16,7 +16,6 @@ EXPERIENCE_CAP = 5.0  # cap extreme small-group loss ratios
 def _slug(value: str) -> str:
     return value.lower().replace(" ", "_")
 
-
 INDUSTRIES = sorted(INDUSTRY_RISK)
 REGION_LIST = sorted(REGIONS)
 

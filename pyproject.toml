@@ -16,7 +16,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "ruff", "build", "google-cloud-aiplatform", "scikit-learn"]
+dev = ["pytest", "ruff", "build", "google-cloud-aiplatform", "scikit-learn", "kfp>=2,<3"]
+pipeline = ["google-cloud-aiplatform"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -26,5 +27,6 @@ ignore = ["I001"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 markers = ["integration: talks to real GCP resources (slow, costs money)"]
 addopts = "-m 'not integration' --strict-markers"

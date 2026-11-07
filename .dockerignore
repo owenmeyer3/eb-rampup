@@ -1,0 +1,9 @@
+.venv/
+.git/
+data/
+artifacts/
+dist/
+notebooks/
+tests/
+**/__pycache__/
+*.yaml
