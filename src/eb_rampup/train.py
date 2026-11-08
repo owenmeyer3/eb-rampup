@@ -16,7 +16,7 @@ import xgboost as xgb
 from eb_rampup.features import FEATURE_COLUMNS, TARGET, build_features, sample_weights
 
 PARAMS = {
-    "n_estimators": 400,
+    "n_estimators": 600,
     "max_depth": 6,
     "learning_rate": 0.05,
     "subsample": 0.8,

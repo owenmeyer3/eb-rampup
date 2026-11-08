@@ -1,7 +1,6 @@
 """Fixtures here are available to every test file without importing."""
 
 import pandas as pd
-import numpy as np
 import pytest
 
 RANGES = {
