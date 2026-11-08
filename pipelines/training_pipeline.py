@@ -57,7 +57,6 @@ def compare_with_champion(
     from collections import namedtuple
     from pathlib import Path
 
-    from google.api_core.exceptions import NotFound
     from google.cloud import aiplatform
 
     from eb_rampup.promotion import should_promote
@@ -69,11 +68,17 @@ def compare_with_champion(
     champion = None
     existing = aiplatform.Model.list(filter=f'display_name="{model_name}"')
     if existing:
-        try:
-            champ = aiplatform.Model(model_name=f"{existing[0].resource_name}@champion")
+        registry = aiplatform.models.ModelRegistry(existing[0])
+        champ_version = next(
+            (v for v in registry.list_versions() if "champion" in v.version_aliases),
+            None,
+        )
+        if champ_version:
+            champ = registry.get_model(version=champ_version.version_id)
             champion = json.loads((to_local_path(champ.uri) / "metrics.json").read_text())
-        except NotFound:
-            pass  # versions exist, but none is the champion
+            print(f"Champion is version {champ_version.version_id}")
+        else:
+            print("Model exists, but no version has the champion alias")
 
     promote, reason = should_promote(challenger, champion, min_improvement)
     print(reason)

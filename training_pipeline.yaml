@@ -162,19 +162,22 @@ deploymentSpec:
           \ region: str, model_name: str, min_improvement: float\n) -> NamedTuple(\"\
           Outputs\", [(\"promote\", bool), (\"reason\", str)]):\n    import json\n\
           \    from collections import namedtuple\n    from pathlib import Path\n\n\
-          \    from google.api_core.exceptions import NotFound\n    from google.cloud\
-          \ import aiplatform\n\n    from eb_rampup.promotion import should_promote\n\
-          \    from eb_rampup.train import to_local_path\n\n    aiplatform.init(project=project,\
-          \ location=region)\n    challenger = json.loads((Path(model.path) / \"metrics.json\"\
-          ).read_text())\n\n    champion = None\n    existing = aiplatform.Model.list(filter=f'display_name=\"\
-          {model_name}\"')\n    if existing:\n        try:\n            champ = aiplatform.Model(model_name=f\"\
-          {existing[0].resource_name}@champion\")\n            champion = json.loads((to_local_path(champ.uri)\
-          \ / \"metrics.json\").read_text())\n        except NotFound:\n         \
-          \   pass  # versions exist, but none is the champion\n\n    promote, reason\
-          \ = should_promote(challenger, champion, min_improvement)\n    print(reason)\n\
-          \    return namedtuple(\"Outputs\", [\"promote\", \"reason\"])(promote,\
-          \ reason)\n\n"
-        image: us-central1-docker.pkg.dev/eb-rampup/eb-rampup/trainer:7f59ea5
+          \    from google.cloud import aiplatform\n\n    from eb_rampup.promotion\
+          \ import should_promote\n    from eb_rampup.train import to_local_path\n\
+          \n    aiplatform.init(project=project, location=region)\n    challenger\
+          \ = json.loads((Path(model.path) / \"metrics.json\").read_text())\n\n  \
+          \  champion = None\n    existing = aiplatform.Model.list(filter=f'display_name=\"\
+          {model_name}\"')\n    if existing:\n        registry = aiplatform.models.ModelRegistry(existing[0])\n\
+          \        champ_version = next(\n            (v for v in registry.list_versions()\
+          \ if \"champion\" in v.version_aliases),\n            None,\n        )\n\
+          \        if champ_version:\n            champ = registry.get_model(version=champ_version.version_id)\n\
+          \            champion = json.loads((to_local_path(champ.uri) / \"metrics.json\"\
+          ).read_text())\n            print(f\"Champion is version {champ_version.version_id}\"\
+          )\n        else:\n            print(\"Model exists, but no version has the\
+          \ champion alias\")\n\n    promote, reason = should_promote(challenger,\
+          \ champion, min_improvement)\n    print(reason)\n    return namedtuple(\"\
+          Outputs\", [\"promote\", \"reason\"])(promote, reason)\n\n"
+        image: us-central1-docker.pkg.dev/eb-rampup/eb-rampup/trainer:2263cbc
     exec-register-model:
       container:
         args:
@@ -215,7 +218,7 @@ deploymentSpec:
           MAE {metrics['mae']:.4f} | promoted by pipeline\",\n        labels={\"git_sha\"\
           : git_sha},\n    )\n    print(f\"Registered version {registered.version_id}\
           \ as champion\")\n\n"
-        image: us-central1-docker.pkg.dev/eb-rampup/eb-rampup/trainer:7f59ea5
+        image: us-central1-docker.pkg.dev/eb-rampup/eb-rampup/trainer:2263cbc
     exec-train:
       container:
         args:
@@ -252,7 +255,7 @@ deploymentSpec:
           \  # model.path is a folder under /gcs/\n    for name, value in results.items():\n\
           \        metrics.log_metric(name, value)  # shows up in the pipeline console\n\
           \n"
-        image: us-central1-docker.pkg.dev/eb-rampup/eb-rampup/trainer:7f59ea5
+        image: us-central1-docker.pkg.dev/eb-rampup/eb-rampup/trainer:2263cbc
     exec-validate-data:
       container:
         args:
@@ -287,7 +290,7 @@ deploymentSpec:
           \ ValueError(\"Data validation failed:\\n- \" + \"\\n- \".join(problems))\n\
           \n    df.to_parquet(data.path, index=False)\n    data.metadata[\"row_count\"\
           ] = len(df)\n\n"
-        image: us-central1-docker.pkg.dev/eb-rampup/eb-rampup/trainer:7f59ea5
+        image: us-central1-docker.pkg.dev/eb-rampup/eb-rampup/trainer:2263cbc
 pipelineInfo:
   name: loss-ratio-training
 root:
