@@ -17,8 +17,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "ruff", "build", "google-cloud-aiplatform", "kfp>=2,<3", "pyyaml"]
-pipeline = ["google-cloud-aiplatform"]
+dev = ["pytest", "ruff", "build", "google-cloud-aiplatform", "kfp>=2,<3", "pyyaml", "fastapi", "uvicorn", "httpx"]
+pipeline = ["google-cloud-aiplatform", "google-cloud-storage"]
+api = ["fastapi", "uvicorn"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
