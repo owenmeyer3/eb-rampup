@@ -7,7 +7,7 @@ import pytest, json
 
 from eb_rampup.data import generate_groups
 from eb_rampup.features import FEATURE_COLUMNS
-# from eb_rampup.score import score_frame
+from eb_rampup.score import score_frame
 from eb_rampup.serving import (
     FeatureMismatchError,
     LoadedModel,
@@ -66,3 +66,14 @@ def test_business_rules(size, prediction, refer, reason):
     row = apply_business_rules(df, [prediction]).iloc[0]
     assert row["refer_to_underwriter"] == refer
     assert row["refer_reason"] == reason
+
+def test_score_frame_columns(model_dir):
+
+    model = load_model_dir(model_dir, version="3")
+    df = generate_groups(20, seed=8)
+    scores = score_frame(model, df)
+    assert list(scores.columns) == [
+        "group_id", "predicted_loss_ratio", "refer_to_underwriter",
+        "refer_reason", "model_version", "scored_at",
+    ]
+    assert (scores["model_version"] == "3").all()
