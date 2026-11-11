@@ -34,14 +34,14 @@ def build_package() -> Path:
     return next(Path("dist").glob("*.tar.gz"))
 
 
-def upload(bucket: str, local: Path, dest: str) -> str:
-    storage.Client().bucket(bucket).blob(dest).upload_from_filename(str(local))
+def upload(bucket: str, local: Path, dest: str, project:str) -> str:
+    storage.Client(project=project).bucket(bucket).blob(dest).upload_from_filename(str(local))
     return f"gs://{bucket}/{dest}"
 
 
-def read_json(uri: str) -> dict:
+def read_json(uri: str, project:str) -> dict:
     bucket, _, path = uri.removeprefix("gs://").partition("/")
-    return json.loads(storage.Client().bucket(bucket).blob(path).download_as_text())
+    return json.loads(storage.Client(project=project).bucket(bucket).blob(path).download_as_text())
 
 
 def main() -> None:
@@ -62,7 +62,7 @@ def main() -> None:
 
     # 1. Package the code and put it where Vertex can install it
     package = build_package()
-    package_uri = upload(args.bucket, package, f"training/{run_id}/{package.name}")
+    package_uri = upload(args.bucket, package, f"training/{run_id}/{package.name}", args.project)
     print(f"Uploaded {package_uri}")
 
     # 2. Run training (like a SageMaker training job)
@@ -84,7 +84,7 @@ def main() -> None:
 
     # 3. Register the trained model as a new version
     model_dir = f"{base_dir}/model"
-    metrics = read_json(f"{model_dir}/metrics.json")
+    metrics = read_json(f"{model_dir}/metrics.json", args.project)
     existing = aiplatform.Model.list(filter=f'display_name="{MODEL_NAME}"')
     if existing:
         aliases = [args.alias] if args.alias else []

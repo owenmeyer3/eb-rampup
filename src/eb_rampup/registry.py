@@ -20,14 +20,14 @@ def find_champion(project: str, region: str, model_name: str):
     return None
 
 
-def download_dir(gcs_uri: str, dest) -> Path:
+def download_dir(gcs_uri: str, dest, project:str) -> Path:
     """Copy every file under a gs:// folder to a local folder."""
     from google.cloud import storage
 
     bucket, _, prefix = gcs_uri.removeprefix("gs://").partition("/")
     prefix = prefix.rstrip("/") + "/"
     dest = Path(dest)
-    for blob in storage.Client().list_blobs(bucket, prefix=prefix):
+    for blob in storage.Client(project=project).list_blobs(bucket, prefix=prefix):
         if blob.name.endswith("/"):
             continue
         target = dest / blob.name[len(prefix):]
@@ -40,5 +40,5 @@ def load_champion(project: str, region: str, model_name: str, dest="/tmp/champio
     champion = find_champion(project, region, model_name)
     if champion is None:
         raise RuntimeError(f"No version of {model_name} has the champion alias")
-    local = download_dir(champion.uri, dest)
+    local = download_dir(champion.uri, dest, project)
     return load_model_dir(local, version=str(champion.version_id))
