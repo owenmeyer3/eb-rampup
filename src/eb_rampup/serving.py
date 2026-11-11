@@ -69,6 +69,6 @@ def apply_business_rules(df: pd.DataFrame, predictions) -> pd.DataFrame:
         if is_high:
             r.append(f"predicted loss ratio above {REFER_MAX_LOSS_RATIO}")
         reasons.append("; ".join(r))
-    out["refer_to_underwriter"] = small | high
+    out["refer_to_underwriter"] = small | high # refer if group is small (<10) or loss ratio is high(>1.5)
     out["refer_reason"] = reasons
     return out

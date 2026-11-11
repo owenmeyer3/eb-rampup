@@ -1,6 +1,4 @@
 # import json
-from unittest.mock import MagicMock
-
 import numpy as np
 import pandas as pd
 import pytest, json
@@ -15,6 +13,10 @@ from eb_rampup.serving import (
     load_model_dir,
 )
 
+class FakeBooster():
+    def predict(self, groups):
+        return [0.5, 1.0, 2.0]
+
 def test_loaded_model_scores_every_row(model_dir):
     model = load_model_dir(model_dir)
     df = generate_groups(50, seed=8)
@@ -22,23 +24,19 @@ def test_loaded_model_scores_every_row(model_dir):
     assert preds.shape == (50,)
     assert np.isfinite(preds).all()
 
-
 def test_load_model_reads_requested_model(tiny_groups):
-    booster = MagicMock()
-    booster.predict.return_value = [0.5, 1.0, 2.0]
+    booster =FakeBooster()
     model = LoadedModel(booster, FEATURE_COLUMNS, target_transform="log")
     assert np.log(model.predict(tiny_groups)) == pytest.approx([0.5, 1.0, 2.0])
 
 def test_no_transoform(tiny_groups):
-    booster = MagicMock()
-    booster.predict.return_value = [0.5, 1.0, 2.0]
+    booster =FakeBooster()
     log_model = LoadedModel(booster, FEATURE_COLUMNS, target_transform="log")
     raw_model = LoadedModel(booster, FEATURE_COLUMNS, target_transform=None)
     assert np.log(log_model.predict(tiny_groups)) == pytest.approx(raw_model.predict(tiny_groups))
 
 def test_missing_feature(tiny_groups):
-    booster = MagicMock()
-    booster.predict.return_value = [0.5, 1.0, 2.0]
+    booster =FakeBooster()
     model=LoadedModel(booster, FEATURE_COLUMNS[:-1], target_transform=None)
 
     with pytest.raises(FeatureMismatchError, match="expects"):

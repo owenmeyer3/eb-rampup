@@ -18,9 +18,11 @@ def main() -> None:
     p.add_argument("--service-account", required=True)
     p.add_argument("--table", default="eb_rampup.groups")
     p.add_argument("--output", default="eb_rampup.scores")
+    p.add_argument("--bucket", required=True)
     args = p.parse_args()
 
-    aiplatform.init(project=args.project, location=args.region)
+    aiplatform.init(project=args.project, location=args.region,
+                    staging_bucket=f"gs://{args.bucket}/staging")
     job = aiplatform.CustomJob(
         display_name=f"loss-ratio-score-{time.strftime('%Y%m%d-%H%M%S')}",
         worker_pool_specs=[{
