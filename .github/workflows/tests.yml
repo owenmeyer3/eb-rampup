@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"   # match the Docker image
@@ -23,3 +24,64 @@ jobs:
 
       - name: Unit tests
         run: pytest -v
+
+  deploy:
+    needs: test                     # only runs if every test passed
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write               # lets this job get a GitHub identity token for Google
+    env:
+      PROJECT_ID: ${{ vars.GCP_PROJECT }}
+      REGION: us-central1
+      SERVICE: loss-ratio-api
+      IMAGE: us-central1-docker.pkg.dev/${{ vars.GCP_PROJECT }}/eb-rampup/trainer:${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Authenticate to Google Cloud (no key file)
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOYER_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Build and push the image
+        run: |
+          gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
+          docker build -t $IMAGE .
+          docker push $IMAGE
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        run: |
+          gcloud run deploy $SERVICE --image $IMAGE --region $REGION \
+            --service-account ${{ vars.API_SA }} \
+            --set-env-vars GCP_PROJECT=$PROJECT_ID,GCP_REGION=$REGION,MODEL_NAME=loss-ratio-ltd \
+            --memory 1Gi --max-instances 2 --no-allow-unauthenticated --quiet
+          echo "url=$(gcloud run services describe $SERVICE --region $REGION --format='value(status.url)')" >> "$GITHUB_OUTPUT"
+
+      - name: Get a token to call the private service
+        id: token
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOYER_SA }}
+          token_format: id_token
+          id_token_audience: ${{ steps.deploy.outputs.url }}
+          id_token_include_email: true
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Smoke test the live service
+        env:
+          API_URL: ${{ steps.deploy.outputs.url }}
+          API_TOKEN: ${{ steps.token.outputs.id_token }}
+        run: |
+          pip install -e ".[dev]"
+          pytest -m integration tests/integration/test_api_live.py -v
