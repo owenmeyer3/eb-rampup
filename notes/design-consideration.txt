@@ -1,0 +1,5 @@
+CI
+If the smoke test fails, the bad revision is already serving traffic: the test runs after the switch. 
+The safer pattern is to deploy with --no-traffic --tag candidate, smoke-test the candidate's own URL, 
+and only then move traffic to it (gcloud run services update-traffic --to-latest). 
+That's a good stretch goal, and worth knowing the name of: it's a form of blue/green deployment.

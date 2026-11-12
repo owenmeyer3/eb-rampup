@@ -54,16 +54,23 @@ jobs:
           docker build -t $IMAGE .
           docker push $IMAGE
 
-      - name: Deploy to Cloud Run
+      # NEW: deploy the revision with NO traffic, tagged "candidate".
+      # Users keep hitting the current revision; the candidate gets its own private URL.
+      - name: Deploy the candidate revision (no traffic yet)
         id: deploy
         run: |
           gcloud run deploy $SERVICE --image $IMAGE --region $REGION \
             --service-account ${{ vars.API_SA }} \
             --set-env-vars GCP_PROJECT=$PROJECT_ID,GCP_REGION=$REGION,MODEL_NAME=loss-ratio-ltd \
-            --memory 1Gi --max-instances 2 --no-allow-unauthenticated --quiet
-          echo "url=$(gcloud run services describe $SERVICE --region $REGION --format='value(status.url)')" >> "$GITHUB_OUTPUT"
+            --memory 1Gi --max-instances 2 --no-allow-unauthenticated \
+            --no-traffic --tag candidate --quiet
+          # NEW: the candidate's own URL, e.g. https://candidate---loss-ratio-api-....run.app
+          URL=$(gcloud run services describe $SERVICE --region $REGION --format=json \
+            | jq -r '.status.traffic[] | select(.tag=="candidate") | .url')
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
 
-      - name: Get a token to call the private service
+      # Unchanged, but the URL is now the candidate's, not the live service's
+      - name: Get a token to call the candidate
         id: token
         uses: google-github-actions/auth@v3
         with:
@@ -78,10 +85,16 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Smoke test the live service
+      # The smoke test now runs against the candidate. If it fails, the job stops here
+      # and the next step never runs: no user ever sees the bad revision.
+      - name: Smoke test the candidate
         env:
           API_URL: ${{ steps.deploy.outputs.url }}
           API_TOKEN: ${{ steps.token.outputs.id_token }}
         run: |
           pip install -e ".[dev]"
-          pytest -m integration tests/test_INTEGRATION_client_call.py -v
+          pytest -m integration tests/integration/test_api_live.py -v
+
+      # NEW: only reached if the smoke test passed. Move all traffic to the new revision.
+      - name: Send traffic to the candidate
+        run: gcloud run services update-traffic $SERVICE --region $REGION --to-latest
