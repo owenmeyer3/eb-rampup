@@ -63,7 +63,8 @@ jobs:
             --service-account ${{ vars.API_SA }} \
             --set-env-vars GCP_PROJECT=$PROJECT_ID,GCP_REGION=$REGION,MODEL_NAME=loss-ratio-ltd \
             --memory 1Gi --max-instances 2 --no-allow-unauthenticated \
-            --no-traffic --tag candidate --quiet
+            --no-traffic --tag candidate \
+            --add-custom-audiences=loss-ratio-api --quiet
           # NEW: the candidate's own URL, e.g. https://candidate---loss-ratio-api-....run.app
           URL=$(gcloud run services describe $SERVICE --region $REGION --format=json \
             | jq -r '.status.traffic[] | select(.tag=="candidate") | .url')
@@ -77,7 +78,7 @@ jobs:
           workload_identity_provider: ${{ vars.WIF_PROVIDER }}
           service_account: ${{ vars.DEPLOYER_SA }}
           token_format: id_token
-          id_token_audience: ${{ steps.deploy.outputs.url }}
+          id_token_audience: loss-ratio-api
           id_token_include_email: true
 
       - uses: actions/setup-python@v6
