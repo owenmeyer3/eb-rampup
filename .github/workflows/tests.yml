@@ -93,7 +93,7 @@ jobs:
           API_TOKEN: ${{ steps.token.outputs.id_token }}
         run: |
           pip install -e ".[dev]"
-          pytest -m integration tests/integration/test_api_live.py -v
+          pytest -m integration tests/test_INTEGRATION_client_call.py -v
 
       # NEW: only reached if the smoke test passed. Move all traffic to the new revision.
       - name: Send traffic to the candidate
