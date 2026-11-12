@@ -13,7 +13,7 @@ from eb_rampup.serving import (
     load_model_dir,
 )
 
-class FakeBooster():
+class FakeBooster:
     def predict(self, groups):
         return [0.5, 1.0, 2.0]
 

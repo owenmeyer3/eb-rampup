@@ -2,12 +2,12 @@ import pandas as pd
 
 from eb_rampup.bq import load_table
 
-class FakeRowIterator():
+class FakeRowIterator:
     """Stands in for BigQuery's RowIterator: only what load_table uses."""
     def to_dataframe(self):
         return pd.DataFrame({"x": [1, 2]})
 
-class FakeClient():
+class FakeClient:
     def list_rows(self, table, max_results=None):
         return FakeRowIterator()
 

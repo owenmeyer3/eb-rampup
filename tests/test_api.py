@@ -3,7 +3,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from eb_rampup.api import app, get_model, load_from_env
-from eb_rampup.serving import load_model_dir, REFER_MAX_LOSS_RATIO, REFER_MIN_LIVES
+from eb_rampup.serving import load_model_dir, REFER_MAX_LOSS_RATIO
 
 
 class FakeModel:
@@ -26,7 +26,7 @@ def client():
     app.dependency_overrides[get_model] = lambda: FakeModel() # tell fastAPI, when get_model is called, return FakeModel() instead
     yield TestClient(app)          # no `with`, so startup (model loading) is skipped
     app.dependency_overrides.clear()
-    
+
 
 def test_health(client):
     response = client.get("/health")
@@ -61,7 +61,7 @@ def test_score_missing_field(client, valid_group):
 def test_score_unk_industry(client, valid_group, model_dir):
     client.app.dependency_overrides[get_model] = lambda: load_model_dir(model_dir)# swap out model so we get the prediction we want for testing
     BAD_INDUSTRY = "screwing around"
-    response = client.post("/score", json={**valid_group, **{"industry":BAD_INDUSTRY}})
+    response = client.post("/score", json={**valid_group, "industry":BAD_INDUSTRY})
 
     assert response.status_code == 422
     assert BAD_INDUSTRY in response.json()['detail']
