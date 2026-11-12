@@ -1,0 +1,4 @@
+CI
+which repo host they use
+whether CI runs on hosted or company-managed runners
+and where container images get built
