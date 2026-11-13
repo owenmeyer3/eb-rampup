@@ -1,0 +1,31 @@
+{
+  "model_version": "2",
+  "feature_psi": {
+    "group_size": 0.00021379256442907566,
+    "avg_age": 0.6467251319316547,
+    "pct_female": 0.00021574724785255073,
+    "avg_salary": 0.00030155890277506515,
+    "elimination_days": 0.00014698468982913467,
+    "benefit_pct": 4.619609593505195e-05,
+    "experience_lr": 1.2655168948002191,
+    "industry": 0.2443749839136201,
+    "region": 0.00013078104382396576
+  },
+  "prediction_psi": 0.6701543102043239,
+  "mae_at_training": 0.15305937546177556,
+  "mae_now": 0.2888897693585468,
+  "run_at": "2026-11-13T21:28:41.739468+00:00",
+  "reference_table": "eb_rampup.groups_trend",
+  "current_table": "eb_rampup.groups_shift",
+  "decision": {
+    "retrain": true,
+    "auto_promote": false,
+    "reasons": [
+      "severe drift in ['avg_age', 'experience_lr', 'predictions']",
+      "MAE rose from 0.1531 to 0.2889"
+    ],
+    "warnings": [
+      "moderate drift in ['industry']"
+    ]
+  }
+}

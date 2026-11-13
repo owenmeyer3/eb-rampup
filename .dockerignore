@@ -7,3 +7,4 @@ notebooks/
 tests/
 **/__pycache__/
 *.yaml
+*.egg-info/
