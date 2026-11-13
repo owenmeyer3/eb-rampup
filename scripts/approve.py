@@ -26,10 +26,16 @@ def main() -> None:
     if args.version not in waiting:
         raise SystemExit(f"Version {args.version} isn't waiting for review (waiting: {waiting})")
 
-    registry.add_version_aliases(["champion"], version=args.version)   # moves it off the old one
+    registry.add_version_aliases(["champion", "default"], version=args.version)   # moves it off the old one
     registry.remove_version_aliases(["pending-review"], version=args.version)
     print(f"Version {args.version} is now the champion")
 
+    # Verify instead of assuming, like register_model's check
+    approved = next(v for v in registry.list_versions() if v.version_id == args.version)
+    missing = {"champion", "default"} - set(approved.version_aliases)
+    if missing:
+        raise SystemExit(f"Approval incomplete: version {args.version} is missing {sorted(missing)}")
+    print(f"Version {args.version} is now the champion and the default")
 
 if __name__ == "__main__":
     main()
