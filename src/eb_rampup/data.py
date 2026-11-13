@@ -33,23 +33,86 @@ def expected_loss_ratio(df: pd.DataFrame) -> pd.Series:
     return BASE_LOSS_RATIO * industry * age * female * elimination * benefit
 
 
-def generate_groups(n: int, seed: int = 42) -> pd.DataFrame:
+# def generate_groups(n: int, seed: int = 42) -> pd.DataFrame:
+#     """Generate n synthetic employer groups with 3 years of history and a target.
+
+#     Small groups get much noisier yearly results than large ones, the same
+#     reason real underwriters trust a 5,000-life group's history more than a
+#     20-life group's.
+#     """
+#     rng = np.random.default_rng(seed)
+#     industries = list(INDUSTRY_RISK)
+
+#     df = pd.DataFrame(
+#         {
+#             "group_id": [f"G{i:06d}" for i in range(n)],
+#             "industry": rng.choice(industries, size=n),
+#             "region": rng.choice(REGIONS, size=n),
+#             "group_size": np.clip(rng.lognormal(4.0, 1.2, size=n), 2, 20_000).astype(int),
+#             "avg_age": np.clip(rng.normal(42, 6, size=n), 22, 64).round(1),
+#             "pct_female": rng.beta(5, 5, size=n).round(3),
+#             "avg_salary": np.clip(rng.lognormal(np.log(65_000), 0.35, size=n), 25_000, 400_000).round(-2),
+#             "elimination_days": rng.choice(ELIMINATION_DAYS, size=n, p=[0.8, 0.2]),
+#             "benefit_pct": rng.choice(BENEFIT_PCTS, size=n, p=[0.3, 0.5, 0.2]),
+#         }
+#     )
+
+#     true_lr = expected_loss_ratio(df)
+#     premium = (df["group_size"] * df["avg_salary"] * PREMIUM_RATE).round(2)
+#     noise_sd = 0.10 + 1.5 / np.sqrt(df["group_size"])
+
+#     for year in YEARS:
+#         yearly_lr = true_lr * rng.lognormal(-(noise_sd**2) / 2, noise_sd)
+#         df[f"premium_y{year}"] = premium
+#         df[f"claims_y{year}"] = (premium * yearly_lr).round(2)
+
+#     df["loss_ratio_next"] = (true_lr * rng.lognormal(-(noise_sd**2) / 2, noise_sd)).round(4)
+#     return df
+
+# new generate_groups to generate updated data
+# this allows an old champion to be scored on new data
+# while the challenger is scored. The challenger may fit new data better due to data drift
+def generate_groups(
+    n: int,
+    seed: int = 42,
+    *,
+    age_shift: float = 0.0,
+    industry_weights: dict[str, float] | None = None,
+    claims_trend: float = 1.0,
+    id_prefix: str = "G",
+) -> pd.DataFrame:
     """Generate n synthetic employer groups with 3 years of history and a target.
 
     Small groups get much noisier yearly results than large ones, the same
     reason real underwriters trust a 5,000-life group's history more than a
     20-life group's.
+
+    The keyword arguments simulate a changing world (all default to "no change"):
+    age_shift moves the average age, industry_weights changes the industry mix,
+    claims_trend scales every group's true loss ratio, and id_prefix keeps
+    group IDs unique across generated batches.
     """
+    if n < 1:
+        raise ValueError(f"n must be at least 1, got {n}")
+
     rng = np.random.default_rng(seed)
     industries = list(INDUSTRY_RISK)
 
+    industry_p = None
+    if industry_weights is not None:
+        unknown = set(industry_weights) - set(industries)
+        if unknown:
+            raise ValueError(f"Unknown industries: {sorted(unknown)}")
+        weights = np.array([industry_weights.get(i, 0.0) for i in industries])
+        industry_p = weights / weights.sum()
+
     df = pd.DataFrame(
         {
-            "group_id": [f"G{i:06d}" for i in range(n)],
-            "industry": rng.choice(industries, size=n),
+            "group_id": [f"{id_prefix}{i:06d}" for i in range(n)],
+            "industry": rng.choice(industries, size=n, p=industry_p),
             "region": rng.choice(REGIONS, size=n),
             "group_size": np.clip(rng.lognormal(4.0, 1.2, size=n), 2, 20_000).astype(int),
-            "avg_age": np.clip(rng.normal(42, 6, size=n), 22, 64).round(1),
+            "avg_age": np.clip(rng.normal(42 + age_shift, 6, size=n), 22, 64).round(1),
             "pct_female": rng.beta(5, 5, size=n).round(3),
             "avg_salary": np.clip(rng.lognormal(np.log(65_000), 0.35, size=n), 25_000, 400_000).round(-2),
             "elimination_days": rng.choice(ELIMINATION_DAYS, size=n, p=[0.8, 0.2]),
@@ -57,7 +120,7 @@ def generate_groups(n: int, seed: int = 42) -> pd.DataFrame:
         }
     )
 
-    true_lr = expected_loss_ratio(df)
+    true_lr = expected_loss_ratio(df) * claims_trend
     premium = (df["group_size"] * df["avg_salary"] * PREMIUM_RATE).round(2)
     noise_sd = 0.10 + 1.5 / np.sqrt(df["group_size"])
 
@@ -68,7 +131,6 @@ def generate_groups(n: int, seed: int = 42) -> pd.DataFrame:
 
     df["loss_ratio_next"] = (true_lr * rng.lognormal(-(noise_sd**2) / 2, noise_sd)).round(4)
     return df
-
 
 if __name__ == "__main__":
     import argparse

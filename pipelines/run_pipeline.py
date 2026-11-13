@@ -33,6 +33,8 @@ def main() -> None:
     p.add_argument("--service-account", required=True)
     p.add_argument("--table", default="eb_rampup.groups")
     p.add_argument("--min-improvement", type=float, default=0.0)
+    p.add_argument("--auto-promote", action=argparse.BooleanOptionalAction, default=True,
+        help="--no-auto-promote sends a winning model to review instead")
     args = p.parse_args()
 
     if "TRAINER_IMAGE" not in os.environ:
@@ -51,6 +53,7 @@ def main() -> None:
             "table": args.table,
             "min_improvement": args.min_improvement,
             "git_sha": git_sha(),
+            "auto_promote": args.auto_promote,
         },
         # Steps read live BigQuery data, so a cached result could be stale
         enable_caching=False,
